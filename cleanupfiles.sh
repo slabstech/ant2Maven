@@ -5,14 +5,9 @@ then
 	rm filelist.txt
 fi
 
-if [ -f install.txt ]
+if [ -f pom.xml ]
 then
-	rm install.txt
-fi
-
-if [ -f new_pom.xml ]
-then
-	rm new_pom.xml
+	rm pom.xml
 fi
 
 if [ -f library_metadata.txt ]
@@ -39,4 +34,9 @@ fi
 if [ -d META-INF ]
 then
 	rm -rf META-INF
+fi
+
+if [ -f jar-sha1sums.txt ]
+then
+	rm jar-sha1sums.txt
 fi
