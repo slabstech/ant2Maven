@@ -1,116 +1,89 @@
-if [ -f filelist.txt]
-	rm filelist.txt
-fi
+#!/bin/sh
+#Script to generate pom dependencies
 
-find . -name '*.jar' | sed -e 's/\.\///' > filelist.txt
+pre_setup()
+{
+	chmod +x cleanupfiles.sh
+	sh cleanupfiles.sh
 
-if [ -f install.txt ]
-	rm install.txt 
-fi
+	find . -name '*.jar' | sed -e 's/\.\///' > filelist.txt
 
-if [ -f new_pom.xml ]
-	rm new_pom.xml
-fi
+	cat pom_stub.txt >> new_pom.xml
+	sort -u filelist.txt
+}
 
-echo'
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>pace</groupId>
-	<artifactId>pace</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-	<build>
-		<!-- <sourceDirectory>build/testclasses</sourceDirectory> <testSourceDirectory>build/tests</testSourceDirectory> -->
-		<sourceDirectory>src/java</sourceDirectory>
-		<testSourceDirectory>src/test</testSourceDirectory>
-		<resources>
-			<resource>
-				<directory>build/testclasses</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</resource>
-			<resource>
-				<directory>build/gensrc</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</resource>
-			<resource>
-				<directory>build/classes</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</resource>
-			<resource>
-				<directory>src/java</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</resource>
-		</resources>
-		<testResources>
-			<testResource>
-				<directory>build/tests</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</testResource>
-			<testResource>
-				<directory>src/test</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</testResource>
-		</testResources>
-		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.7.0</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<fork>true</fork>
-					<executable>C:\Program Files\Java\jdk1.8.0_171\bin\javac.exe</executable>
+generate_pom()
+{
+	echo "JarName \t CurrentVersion \t UpgradeVersion \t IsModified \t IsUpgradable">> library_metadata.txt
 
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-	<dependencies>
-'> new_pom.xml
+	comp_name='sample'
+	for file_name in `cat filelist.txt`;
+	do
+		isModified=`jar_modification $file_name`
+		isUpgradable=`jar_upgradable $file_name`
+		fname=$(basename $file_name);
+		if [ -d META-INF ]
+		then
+			rm -rf META-INF
+		fi
+		jar -xf $file_name META-INF/MANIFEST.MF
+		version=`grep "Implementation-Version" META-INF/MANIFEST.MF | cut -d ':' -f2 | xargs`
+		#jar_vendor=`grep "Implementation-Vendor-Id" META-INF/MANIFEST.MF | cut -d ':' -f2 | xargs`
+		jar_vendor=$(echo $fname|sed -e 's/\.jar//') ;
+		echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId=com.'$comp_name'.'$jar_vendor' -DartifactId='$comp_name'-lib-'$jar_vendor' -Dversion=1.0 -Dpackaging=jar ' >>install.txt;
+		echo " " >> install.txt ;
+	  echo $fname'\t '$version' \t '$isModified' \t '$isUpgradable >> library_metadata.txt
+		echo '\t\t<dependency>' >> new_pom.xml
+		echo '\t\t\t<groupId>com.'$comp_name'.'$jar_vendor'</groupId>' >> new_pom.xml
+		echo '\t\t\t<artifactId>'$comp_name'-lib-'$jar_vendor'</artifactId>' >> new_pom.xml
+		echo '\t\t\t<version>1.0</version>'>> new_pom.xml
+		echo '\t\t</dependency>' >> new_pom.xml
 
-sort -u filelist.txt
+	done;
 
-comp_name='sample'
-for i in `cat filelist.txt`; 
-do 
-	fname=$(basename $i); 
-	tmp=$(echo $fname|sed -e 's/\.jar//') ;
-	echo $'mvn install:install-file -Dfile='$i' -DgroupId=com.'$comp_name'.'$tmp' -DartifactId='$comp_name'-lib-'$tmp' -Dversion=1.0 -Dpackaging=jar ' >>install.txt;  
-	echo " " >> install.txt ;
-	
-	echo '<dependency>' >> new_pom.xml
-	echo '<groupId>com.'$comp_name'.'$tmp'</groupId>' >> new_pom.xml
-	echo '<artifactId>'$comp_name'-lib-'$tmp'</artifactId>' >> new_pom.xml
-	echo '<version>1.0</version>'>> new_pom.xml
-	echo '</dependency>' >> new_pom.xml	
-	
-done;
+	echo '</dependencies>
+		</project>' >> new_pom.xml
 
-echo '
-	</dependencies>
-	</project>' >> new_pom.xml
+}
 
+install_dependencies(){
+	mv install.txt install.sh
 
-mv install.txt install.sh
+	chmod +x install.sh
 
-chmod +x install.sh
+	sh install.sh
+}
 
-sh install.sh
+run_gen_pom()
+{
+	mv new_pom.xml example/pom.xml
+	cd example
+	mvn -q clean install
+	if [ "$?" -ne 0 ] ; then
+	  echo 'could not perform installation'; exit $rc
+	fi
+	if [ "$?" -eq 0 ] ; then
+	  echo 'Maven project compiled successfully'; exit $rc
+	fi
 
+	cd ..
+}
 
+jar_modification()
+{
+	#echo 'Checking '$1' for local modifications'
+	#return 0
+	echo "True"
+}
+
+jar_upgradable()
+{
+	#echo 'Checking '$1' for version upgrade'
+	echo "True"
+	#return 0
+}
+
+pre_setup
+generate_pom
+install_dependencies
+run_gen_pom
