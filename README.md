@@ -6,7 +6,7 @@
 ## To execute
 ## git clone https://github.com/sachinsshetty/ant2Maven.git
 ## cd ant2Maven
-## bash script
+## bash script.sh
 
 
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #Script to remove temporary files
 if [ -f filelist.txt ]
 then
