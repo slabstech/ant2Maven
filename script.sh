@@ -3,6 +3,7 @@
 
 pre_setup()
 {
+	echo "Started Running Presetup"
 	chmod +x cleanupfiles.sh
 	sh cleanupfiles.sh
 
@@ -12,14 +13,15 @@ pre_setup()
 
 	cat pom_stub.txt >> pom.xml
 	sort -u filelist.txt
+	echo "Completed Presetup"
 }
 
 populate_metadata()
 {
+	echo "Started Running populate_metadata()"
 	#metadata_file_name=$1
 	#metadata_file_name=library_metadata.txt
 	#echo -e "FileName \t JarName \t CurrentVersion \t UpgradeVersion \t IsModified \t IsUpgradable \t groupId \t artifactId">> library_metadata.txt
-	comp_name='sample'
 	for file_name in `cat filelist.txt`;
 	do
 		json_data=`jar_json_maven_repo $file_name`
@@ -40,8 +42,8 @@ populate_metadata()
 
 		if [ $isModified == 0 ];
 		then
-			artifactId=$comp_name'-lib-'$jar_vendor
-			groupId='com.'$comp_name'.'$jar_vendor
+			artifactId=$proj_name'-lib-'$jar_vendor
+			groupId=$comp_name'.'$proj_name'.'$jar_vendor
 			echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId >> library_metadata.txt
 		else
 
@@ -57,21 +59,21 @@ populate_metadata()
 				versionId=1.0
 				latestVersionId=1.0
 				isModified=0
-				artifactId=$comp_name'-lib-'$jar_vendor
-				groupId='com.'$comp_name'.'$jar_vendor
+				artifactId=$proj_name'-lib-'$jar_vendor
+				groupId=$comp_name'.'$proj_name'.'$jar_vendor
 
 				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> library_metadata.txt
 			else
 				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> library_metadata.txt
 			fi
 		fi
-
 	done;
-
+	echo "completed populate_metadata()"
 }
 
 generate_installer_file()
 {
+	echo "Started Running generate_installer_file()"
 	readarray rows < library_metadata.txt
 
 	for rowvalue in "${rows[@]}";
@@ -95,10 +97,11 @@ generate_installer_file()
 		fi
 
 	done
-
+	echo "Completed generate_installer_file()"
 }
 generate_pom()
 {
+	echo "Started Running generate_pom()"
 	readarray rows < library_metadata.txt
 
 
@@ -131,16 +134,19 @@ generate_pom()
 
 	echo -e '</dependencies>
 		</project>' >> pom.xml
-
+	echo "Completed generate_pom()"
 }
 
 install_dependencies(){
+	echo "Installing all dependencies"
 	chmod +x install.sh
 	bash install.sh
+	echo "Completed installing dependencies"
 }
 
 run_gen_pom()
 {
+	echo "Running maven install for the project"
 	mv temp_pom.xml example/pom.xml
 
 	#mv temp_pom.xml pom.xml
@@ -153,7 +159,8 @@ run_gen_pom()
 	  echo 'Maven project compiled successfully'; exit $rc
 	fi
 
-	#cd ..
+	cd ..
+
 }
 
 jar_json_maven_repo()
@@ -207,6 +214,18 @@ jar_upgradable()
 	#return 0
 }
 
+comp_name=$1
+proj_name=$2
+if [ -z $comp_name ];
+then
+	comp_name='com'
+fi
+
+if [ -z $proj_name ];
+then
+	proj_name='sach'
+fi
+
 
 pre_setup
 populate_metadata
@@ -214,5 +233,4 @@ generate_pom
 generate_installer_file
 mv pom.xml temp_pom.xml
 install_dependencies
-
 run_gen_pom

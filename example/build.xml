@@ -12,7 +12,7 @@
 	<property name="lib.dir"     value="lib"/>
 
     <path id="classpath">
-        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+      <pathelement path="${runtime_classpath}"/>
     </path>
 
     <target name="clean">
@@ -46,7 +46,7 @@
             </classpath>
         </java>
     </target>
-    
+
     <target name="clean-build" depends="clean,jar"/>
 
     <target name="main" depends="clean,run"/>
@@ -58,7 +58,7 @@
                 <path refid="classpath"/>
                 <path refid="application"/>
             </classpath>
-			
+
 			<formatter type="xml"/>
 
             <batchtest fork="yes" todir="${report.dir}">
@@ -66,7 +66,7 @@
             </batchtest>
         </junit>
     </target>
-	
+
 	<target name="junitreport">
         <junitreport todir="${report.dir}">
             <fileset dir="${report.dir}" includes="TEST-*.xml"/>
