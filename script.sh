@@ -6,7 +6,9 @@ pre_setup()
 	chmod +x cleanupfiles.sh
 	sh cleanupfiles.sh
 
-	find . -name '*.jar' | sed -e 's/\.\///' > filelist.txt
+	find . -name '*.jar' > tmpfile
+	cat tmpfile | sed -e 's/\.\///' > filelist.txt
+	rm tmpfile
 
 	cat pom_stub.txt >> pom.xml
 	sort -u filelist.txt
@@ -33,13 +35,14 @@ populate_metadata()
 		fi
 
 		jar_vendor=$(echo $fname|sed -e 's/\.jar//') ;
-		version=1.0
+		versionId=1.0
+		latestVersionId=1.0
 
 		if [ $isModified == 0 ];
 		then
 			artifactId=$comp_name'-lib-'$jar_vendor
 			groupId='com.'$comp_name'.'$jar_vendor
-			echo -e $file_name' \t '$fname'\t '$version' \t '$version' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId >> library_metadata.txt
+			echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId >> library_metadata.txt
 		else
 
 			groupId=`get_groupId $json_data`
@@ -47,7 +50,20 @@ populate_metadata()
 			versionId=`get_versionId $json_data`
 			latestVersionId=`get_latest_versionID $groupId $artifactId`
 
-			echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> library_metadata.txt
+			if [[ -z "$versionId" ]] || [[ -z "$groupId" ]] || [[ -z "$artifactId" ]] || [[ -z "$latestVersionId" ]];
+			then
+				echo $json_data >> failing_jars.txt
+				echo $jar_vendor >> failing_jars.txt
+				versionId=1.0
+				latestVersionId=1.0
+				isModified=0
+				artifactId=$comp_name'-lib-'$jar_vendor
+				groupId='com.'$comp_name'.'$jar_vendor
+
+				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> library_metadata.txt
+			else
+				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> library_metadata.txt
+			fi
 		fi
 
 	done;
@@ -69,8 +85,12 @@ generate_installer_file()
 
 		if [ $isModified == 0 ];
 		then
-			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  ' >>install.sh;
 			echo 'echo installing '$file_name' in local maven repo' >> install.sh
+
+			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>install.sh;
+			echo 'if [ "$?" -ne 0 ] ; then' >> install.sh ;
+			  echo 'echo "could not perform installation"; exit $rc' >> install.sh ;
+			echo "fi" >> install.sh ;
 			echo " " >> install.sh ;
 		fi
 
@@ -121,9 +141,11 @@ install_dependencies(){
 
 run_gen_pom()
 {
-	mv pom.xml example/pom.xml
+	mv temp_pom.xml example/pom.xml
+
+	#mv temp_pom.xml pom.xml
 	cd example
-	mvn clean install -q
+	mvn clean install -q 2> /dev/null
 	if [ "$?" -ne 0 ] ; then
 	  echo 'could not perform installation'; exit $rc
 	fi
@@ -131,7 +153,7 @@ run_gen_pom()
 	  echo 'Maven project compiled successfully'; exit $rc
 	fi
 
-	cd ..
+	#cd ..
 }
 
 jar_json_maven_repo()
@@ -150,19 +172,19 @@ jar_modification()
 
 get_groupId()
 {
-		groupId=`echo $1 |   grep -Po '"g":"[a-z]*"' | cut -d ":" -f2 | xargs`
+		groupId=`echo $1 |   grep -Po '"g":"\K[^"\047]+(?=["\047])' | xargs`
 		echo $groupId
 }
 
 get_artifactId()
 {
-		artifactId=`echo $1 | grep -Po '"a":"[a-z]*"' | cut -d ":" -f2 | xargs`
+		artifactId=`echo $1 | grep -Po '"a":"\K[^"\047]+(?=["\047])' | xargs`
 		echo $artifactId
 }
 
 get_versionId()
 {
-		versionId=`echo $1 | grep -Po '"v":"[0-9]*.[0-9]*"' | cut -d ":" -f2| xargs`
+		versionId=`echo $1 | grep -Po '"v":"\K[^"\047]+(?=["\047])' | xargs`
 		echo $versionId
 }
 
@@ -175,7 +197,7 @@ get_latest_versionID()
 
 		formatLatVerResponse=`echo $latVerResponse | grep -Po '"response":*.*'`
 
-		latestVersionId=`echo $formatLatVerResponse | grep -Po '"latestVersion":"[0-9]*.[0-9]*"' | cut -d ":" -f2| xargs`
+		latestVersionId=`echo $formatLatVerResponse | grep -Po '"latestVersion":"\K[^"\047]+(?=["\047])' | xargs`
 		echo $latestVersionId
 }
 jar_upgradable()
@@ -190,5 +212,7 @@ pre_setup
 populate_metadata
 generate_pom
 generate_installer_file
+mv pom.xml temp_pom.xml
 install_dependencies
+
 run_gen_pom

@@ -40,3 +40,8 @@ if [ -f jar-sha1sums.txt ]
 then
 	rm jar-sha1sums.txt
 fi
+
+if [ -f failing_jars.txt ]
+then
+	rm failing_jars.txt
+fi

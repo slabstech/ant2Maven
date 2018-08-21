@@ -12,10 +12,10 @@
 
 ## Workflow
 * ### Find version of jars of manifest file.
-* ### Fetch jar from mavenrepository using curl
+* ### Fetch jar from maven repository using curl
 * ### Match based on checksum and search for latest version
 * ### If modification is found, use existing jar in pom.xml
-* ### Fix tree dependancy issue from different repos
+* ### Fix tree dependency issue from different repos
 
 
 # TODO
@@ -24,7 +24,7 @@
     * ### Remove duplicates jar
     * ### Remove low level jars
     * ### find corresponding jar from maven repository and replace in pom file.
-    * ### fix maven tree dependancy
+    * ### fix maven tree dependency
     * ### ignore build directory
 * ## Version2
-    * ## Add here
+    * ## Handle multiple jars found from sha1sum. numFound>1
