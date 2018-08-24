@@ -28,3 +28,29 @@
     * ### ignore build directory
 * ## Version2
     * ## Handle multiple jars found from sha1sum. numFound>1
+
+
+### Steps to Create a docker jfrog artifactory in Ubuntu-VM 
+
+https://docs.docker.com/install/linux/docker-ce/ubuntu/#set-up-the-repository
+https://www.jfrog.com/confluence/display/RTF/Installing+with+Docker
+
+### Dependency install
+1. sudo apt update
+2. sudo apt install default-jre
+3. sudo apt install default-jdk
+4. sudo apt install openjdk-8-jdk
+5. sudo update-alternatives --config java
+6. sudo apt install maven
+7. Copy settings folder to .m2/ folder
+
+
+## Run in docker to create artifactory
+1. docker pull docker.bintray.io/jfrog/artifactory-oss:latest
+
+2. docker run --name artifactory -d -p 8081:8081 docker.bintray.io/jfrog/artifactory-oss:latest
+
+
+## Attached settings from maven - maven_generated.txt
+
+

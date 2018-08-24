@@ -7,18 +7,17 @@ pre_setup()
 	chmod +x cleanupfiles.sh
 	sh cleanupfiles.sh
 
-	find . -name '*.jar' > tmpfile
-	cat tmpfile | sed -e 's/\.\///' > filelist.txt
-	rm tmpfile
-
-	cat pom_stub.txt >> pom.xml
-	sort -u filelist.txt
 	echo "Completed Presetup"
 }
 
 populate_metadata()
 {
 	echo "Started Running populate_metadata()"
+	find . -name '*.jar' > tmpfile
+	cat tmpfile | sed -e 's/\.\///' > filelist.txt
+	rm tmpfile
+
+	sort -u filelist.txt
 	#metadata_file_name=$1
 	#metadata_file_name=library_metadata.txt
 	#echo -e "FileName \t JarName \t CurrentVersion \t UpgradeVersion \t IsModified \t IsUpgradable \t groupId \t artifactId">> library_metadata.txt
@@ -87,11 +86,11 @@ generate_installer_file()
 
 		if [ $isModified == 0 ];
 		then
-			echo 'echo installing '$file_name' in local maven repo' >> install.sh
+			echo 'echo installing '$file_name' in local maven repo' >> local_install.sh
 
-			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>install.sh;
-			echo 'if [ "$?" -ne 0 ] ; then' >> install.sh ;
-			  echo 'echo "could not perform installation"; exit $rc' >> install.sh ;
+			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>local_install.sh;
+			echo 'if [ "$?" -ne 0 ] ; then' >> local_install.sh ;
+			  echo 'echo "could not perform installation"; exit $rc' >> local_install.sh ;
 			echo "fi" >> install.sh ;
 			echo " " >> install.sh ;
 		fi
@@ -138,15 +137,24 @@ generate_pom()
 }
 
 install_dependencies(){
+	isLocal=$1
 	echo "Installing all dependencies"
-	chmod +x install.sh
-	bash install.sh
+	
+	chmod +x deploy_install.sh
+	chmod +x local_install.sh
+	if [ isLocal ]; then
+		bash local_install.sh
+	else
+		bash deploy_install.sh
+	fi
+
 	echo "Completed installing dependencies"
 }
 
 run_gen_pom()
 {
 	echo "Running maven install for the project"
+	cat pom_stub.txt >> pom.xml
 	mv temp_pom.xml example/pom.xml
 
 	#mv temp_pom.xml pom.xml
@@ -207,6 +215,45 @@ get_latest_versionID()
 		latestVersionId=`echo $formatLatVerResponse | grep -Po '"latestVersion":"\K[^"\047]+(?=["\047])' | xargs`
 		echo $latestVersionId
 }
+
+#!/bin/bash
+#Script to generate pom dependencies
+
+generate_installer_file_deploy()
+{
+	url=$1
+	if [ -z $url ]; then
+		url='localhost'
+	fi
+	
+	echo "Started Running generate_installer_file()"
+	readarray rows < library_metadata.txt
+
+	for rowvalue in "${rows[@]}";
+	do
+		rowarray=(${rowvalue});
+		file_name=${rowarray[0]};
+		currentVersion=${rowarray[2]};
+		isModified=${rowarray[4]};
+		groupId=${rowarray[6]};
+		artifactId=${rowarray[7]};
+
+		if [ $isModified == 0 ];
+		then
+			echo 'echo installing '$file_name' in local maven repo' >> deploy_install.sh
+
+			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':8081/artifactory/libs-release -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>deploy_install.sh;
+			echo 'if [ "$?" -ne 0 ] ; then' >> deploy_arti.sh ;
+			  echo 'echo "could not perform installation"; exit $rc' >> deploy_insall.sh ;
+			echo "fi" >> deploy_install.sh ;
+			echo " " >> deploy_install.sh ;
+		fi
+
+	done
+	echo "Completed generate_installer_file()"
+}
+
+
 jar_upgradable()
 {
 	#echo 'Checking '$1' for version upgrade'
@@ -230,7 +277,8 @@ fi
 pre_setup
 populate_metadata
 generate_pom
+generate_installer_file_deploy 'localhost'
 generate_installer_file
 mv pom.xml temp_pom.xml
-install_dependencies
+install_dependencies false
 run_gen_pom
