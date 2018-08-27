@@ -73,6 +73,13 @@ populate_metadata()
 generate_installer_file()
 {
 	echo "Started Running generate_installer_file()"
+	
+	url=$1
+	arti_install=$2
+	if [ -z $url ]; then
+		url='localhost'
+	fi
+	
 	readarray rows < library_metadata.txt
 
 	for rowvalue in "${rows[@]}";
@@ -84,26 +91,37 @@ generate_installer_file()
 		groupId=${rowarray[6]};
 		artifactId=${rowarray[7]};
 
-		if [ $isModified == 0 ];
+		if [ $isModified == 0 ] && [ "$arti_install" -eq 0 ] ;
 		then
-			echo 'echo installing '$file_name' in local maven repo' >> local_install.sh
+			echo 'echo installing '$file_name' in local maven repo as '$artifactId >> local_install.sh
 
 			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>local_install.sh;
 			echo 'if [ "$?" -ne 0 ] ; then' >> local_install.sh ;
-			  echo 'echo "could not perform installation"; exit $rc' >> local_install.sh ;
+			echo 'echo "could not perform installation"; exit $rc' >> local_install.sh ;
 			echo "fi" >> install.sh ;
 			echo " " >> install.sh ;
 		fi
+		if [ $isModified == 0 ] && [ "$arti_install" -eq 1 ];
+		then
+			echo 'echo installing '$file_name' in artifactory repo as '$artifactId >> deploy_install.sh
 
+			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':8081/artifactory/libs-release -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>deploy_install.sh;
+			echo 'if [ "$?" -ne 0 ] ; then' >> deploy_install.sh ;
+			echo 'echo "could not perform installation"; exit $rc' >> deploy_install.sh ;
+			echo "fi" >> deploy_install.sh ;
+			echo " " >> deploy_install.sh ;
+		fi
 	done
+	
 	echo "Completed generate_installer_file()"
 }
 generate_pom()
 {
+	artifactory_url=$1
 	echo "Started Running generate_pom()"
 	readarray rows < library_metadata.txt
 
-
+	cat pom_stub.txt >> pom.xml
 	for rowvalue in "${rows[@]}";
 	do
 		rowarray=(${rowvalue});
@@ -115,7 +133,7 @@ generate_pom()
 		artifactId=${rowarray[7]};
 
 		jar_vendor=$(echo $fname|sed -e 's/\.jar//') ;
-
+		temp=$( sed -i 's/artifactory_url/'"$artifactory_url"'/' pom.xml)
 		echo -e '\t\t<dependency>' >> pom.xml
 		if [ $isModified == 0 ];
 		then
@@ -137,15 +155,15 @@ generate_pom()
 }
 
 install_dependencies(){
-	isLocal=$1
+	isArtifact=$1
 	echo "Installing all dependencies"
 	
-	chmod +x deploy_install.sh
-	chmod +x local_install.sh
-	if [ isLocal ]; then
-		bash local_install.sh
-	else
+	if [ "$isArtifact" -eq 1 ]; then
+		chmod +x deploy_install.sh
 		bash deploy_install.sh
+	else
+		chmod +x local_install.sh
+		bash local_install.sh
 	fi
 
 	echo "Completed installing dependencies"
@@ -154,11 +172,15 @@ install_dependencies(){
 run_gen_pom()
 {
 	echo "Running maven install for the project"
-	cat pom_stub.txt >> pom.xml
-	mv temp_pom.xml example/pom.xml
-
-	#mv temp_pom.xml pom.xml
-	cd example
+	
+	if [ "$isTest" -eq 1 ]; then
+		mv temp_pom.xml example/pom.xml
+		cd example
+	else
+		mv temp_pom.xml pom.xml
+	fi
+	
+	
 	mvn clean install -q 2> /dev/null
 	if [ "$?" -ne 0 ] ; then
 	  echo 'could not perform installation'; exit $rc
@@ -167,7 +189,9 @@ run_gen_pom()
 	  echo 'Maven project compiled successfully'; exit $rc
 	fi
 
-	cd ..
+	if [ "$isTest" -eq 1 ]; then
+		cd ..
+	fi
 
 }
 
@@ -216,44 +240,6 @@ get_latest_versionID()
 		echo $latestVersionId
 }
 
-#!/bin/bash
-#Script to generate pom dependencies
-
-generate_installer_file_deploy()
-{
-	url=$1
-	if [ -z $url ]; then
-		url='localhost'
-	fi
-	
-	echo "Started Running generate_installer_file()"
-	readarray rows < library_metadata.txt
-
-	for rowvalue in "${rows[@]}";
-	do
-		rowarray=(${rowvalue});
-		file_name=${rowarray[0]};
-		currentVersion=${rowarray[2]};
-		isModified=${rowarray[4]};
-		groupId=${rowarray[6]};
-		artifactId=${rowarray[7]};
-
-		if [ $isModified == 0 ];
-		then
-			echo 'echo installing '$file_name' in local maven repo' >> deploy_install.sh
-
-			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':8081/artifactory/libs-release -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>deploy_install.sh;
-			echo 'if [ "$?" -ne 0 ] ; then' >> deploy_arti.sh ;
-			  echo 'echo "could not perform installation"; exit $rc' >> deploy_insall.sh ;
-			echo "fi" >> deploy_install.sh ;
-			echo " " >> deploy_install.sh ;
-		fi
-
-	done
-	echo "Completed generate_installer_file()"
-}
-
-
 jar_upgradable()
 {
 	#echo 'Checking '$1' for version upgrade'
@@ -263,6 +249,9 @@ jar_upgradable()
 
 comp_name=$1
 proj_name=$2
+artifactory=$3
+arti_install=$4
+isTest=$5
 if [ -z $comp_name ];
 then
 	comp_name='com'
@@ -273,12 +262,26 @@ then
 	proj_name='sach'
 fi
 
+if [ -z $artifactory ];
+then
+	artifactory='localhost'
+fi
+
+if [ -z $arti_install ];
+then
+	arti_install=1
+fi
+
+if [ -z $isTest ];
+then
+	isTest=1
+fi
 
 pre_setup
 populate_metadata
-generate_pom
-generate_installer_file_deploy 'localhost'
-generate_installer_file
+generate_pom $artifactory
+generate_installer_file $artifactory $arti_install
+
 mv pom.xml temp_pom.xml
-install_dependencies false
-run_gen_pom
+install_dependencies $arti_install
+run_gen_pom $isTest

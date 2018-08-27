@@ -6,20 +6,21 @@
 	<artifactId>pace</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
-	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<maven.compiler.source>1.8</maven.compiler.source>
-	<maven.compiler.target>1.8</maven.compiler.target>
-</properties>
-  <repositories>
-    <repository>
-      <id>snapshots</id>
-      <url>http://localhost:8081/artifactory/libs-snapshot</url>
-    </repository>
-    <repository>
-      <id>releases</id>
-      <url>http://localhost:8081/artifactory/libs-release</url>
-    </repository>
-  </repositories>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<sonar.host.url>http://localhost:9000</sonar.host.url>
+	</properties>
+	<repositories>
+		<!--repository>
+			<id>snapshots</id>
+			<url>http://artifactory_url:8081/artifactory/libs-snapshot</url>
+			</repository-->
+		<repository>
+			<id>releases</id>
+			<url>http://artifactory_url:8081/artifactory/libs-release</url>
+		</repository>
+	</repositories>
 	<build>
 		<!-- <sourceDirectory>build/testclasses</sourceDirectory> <testSourceDirectory>build/tests</testSourceDirectory> -->
 		<sourceDirectory>src/java</sourceDirectory>
