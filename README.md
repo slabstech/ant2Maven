@@ -13,22 +13,27 @@ bash script.sh efi pace 192.168.220.133 1 0
 
 ```
 ### Workflow
-* #### Find version of jars of manifest file.
-* #### Fetch jar from maven repository using curl
+* ##### Find version of jars of manifest file.
+* ##### Fetch jar from maven repository using curl
 * #### Match based on checksum and search for latest version
-* #### If modification is found, use existing jar in pom.xml
-* #### Fix tree dependency issue from different repos
+* ##### If modification is found, use existing jar in pom.xml
+* ##### Fix tree dependency issue from different repos
 
 ### TODO
 
-* #### Version1
-    * ##### Remove duplicates jar
-    * ##### Remove low level jars
+* #### Version 1
+
     * ##### find corresponding jar from maven repository and replace in pom file.
-    * ##### fix maven tree dependency
     * ##### ignore build directory
-* ##### Version2
+* ##### Version 2
     * ##### Handle multiple jars found from sha1sum. numFound>1
+    * ##### Remove duplicates jar
+    * ##### Remove low level/ transitive jars
+
+* #### Version 3
+    * ##### Add ignore jar list
+    * ##### Use Maven dependency tree
+    * ##### Jar file analysis
 
 
 ### Steps to Create a docker jfrog artifactory in Ubuntu-VM
