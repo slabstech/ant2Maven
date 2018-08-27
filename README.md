@@ -7,9 +7,9 @@
 ```
 git clone https://github.com/sachinsshetty/ant2Maven.git
 cd ant2Maven
-# bash script.sh <company_name> <project_name> <artifact_repo_url> <isArtfifactoryUrl> <isTestRun>
+# bash scripts/ant2Maven.sh <company_name> <project_name> <artifact_repo_url> <isArtfifactoryUrl> <isTestRun>
 ## Example
-bash script.sh efi pace 192.168.220.133 1 0
+bash scripts/ant2Maven.sh efi pace 192.168.220.133 1 0
 
 ```
 ### Workflow
@@ -41,7 +41,7 @@ bash script.sh efi pace 192.168.220.133 1 0
 ### Dependency install
 
 
-### execute install_artifactory.sh or follow steps given in below steps and then from links for docker
+### execute scripts/install_artifactory.sh or follow steps given in below steps and then from links for docker
 
 ````
 1. sudo apt update

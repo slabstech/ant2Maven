@@ -6,13 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.10] - 2018-08-28
+## [0.0.11] - 2018-08-27
+### Added
+- Refactored code, moved files to specific directories
+
+
+## [0.0.10] - 2018-08-27
 ### Added
 - Start using "changelog"
 - Updated TODO list in README
 
 
-## [0.0.9] - 2018-08-27
+## [0.0.9] - 2018-08-25
 ### Added
 - add repo information to script
 - script added to install docker based jfrog artifactory

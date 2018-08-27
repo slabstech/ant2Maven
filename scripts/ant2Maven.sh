@@ -4,8 +4,8 @@
 pre_setup()
 {
 	echo "Started Running Presetup"
-	chmod +x cleanupfiles.sh
-	sh cleanupfiles.sh
+	chmod +x scripts/cleanupfiles.sh
+	bash scripts/cleanupfiles.sh
 
 	echo "Completed Presetup"
 }
@@ -14,14 +14,14 @@ populate_metadata()
 {
 	echo "Started Running populate_metadata()"
 	find . -name '*.jar' > tmpfile
-	cat tmpfile | sed -e 's/\.\///' > filelist.txt
+	cat tmpfile | sed -e 's/\.\///' > data/filelist.txt
 	rm tmpfile
 
-	sort -u filelist.txt
+	temp=$(sort -u data/filelist.txt)
 	#metadata_file_name=$1
 	#metadata_file_name=library_metadata.txt
 	#echo -e "FileName \t JarName \t CurrentVersion \t UpgradeVersion \t IsModified \t IsUpgradable \t groupId \t artifactId">> library_metadata.txt
-	for file_name in `cat filelist.txt`;
+	for file_name in `cat data/filelist.txt`;
 	do
 		json_data=`jar_json_maven_repo $file_name`
 
@@ -43,7 +43,7 @@ populate_metadata()
 		then
 			artifactId=$proj_name'-lib-'$jar_vendor
 			groupId=$comp_name'.'$proj_name'.'$jar_vendor
-			echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId >> library_metadata.txt
+			echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId >> data/library_metadata.txt
 		else
 
 			groupId=`get_groupId $json_data`
@@ -53,17 +53,17 @@ populate_metadata()
 
 			if [[ -z "$versionId" ]] || [[ -z "$groupId" ]] || [[ -z "$artifactId" ]] || [[ -z "$latestVersionId" ]];
 			then
-				echo $json_data >> failing_jars.txt
-				echo $jar_vendor >> failing_jars.txt
+				echo $json_data >> data/failing_jars.txt
+				echo $jar_vendor >> data/failing_jars.txt
 				versionId=1.0
 				latestVersionId=1.0
 				isModified=0
 				artifactId=$proj_name'-lib-'$jar_vendor
 				groupId=$comp_name'.'$proj_name'.'$jar_vendor
 
-				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> library_metadata.txt
+				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> data/library_metadata.txt
 			else
-				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> library_metadata.txt
+				echo -e $file_name' \t '$fname'\t '$versionId' \t '$latestVersionId' \t '$isModified' \t '$isUpgradable ' \t '$groupId' \t '$artifactId>> data/library_metadata.txt
 			fi
 		fi
 	done;
@@ -80,7 +80,7 @@ generate_installer_file()
 		url='localhost'
 	fi
 	
-	readarray rows < library_metadata.txt
+	readarray rows < data/library_metadata.txt
 
 	for rowvalue in "${rows[@]}";
 	do
@@ -93,23 +93,23 @@ generate_installer_file()
 
 		if [ $isModified == 0 ] && [ "$arti_install" -eq 0 ] ;
 		then
-			echo 'echo installing '$file_name' in local maven repo as '$artifactId >> local_install.sh
+			echo 'echo installing '$file_name' in local maven repo as '$artifactId >> scripts/local_install.sh
 
-			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>local_install.sh;
-			echo 'if [ "$?" -ne 0 ] ; then' >> local_install.sh ;
-			echo 'echo "could not perform installation"; exit $rc' >> local_install.sh ;
-			echo "fi" >> install.sh ;
-			echo " " >> install.sh ;
+			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >> scripts/local_install.sh;
+			echo 'if [ "$?" -ne 0 ] ; then' >> scripts/local_install.sh ;
+			echo 'echo "could not perform installation"; exit $rc' >> scripts/local_install.sh ;
+			echo "fi" >> scripts/local_install.sh ;
+			echo " " >> scripts/local_install.sh ;
 		fi
 		if [ $isModified == 0 ] && [ "$arti_install" -eq 1 ];
 		then
-			echo 'echo installing '$file_name' in artifactory repo as '$artifactId >> deploy_install.sh
+			echo 'echo installing '$file_name' in artifactory repo as '$artifactId >> scripts/deploy_install.sh
 
-			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':8081/artifactory/libs-release -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >>deploy_install.sh;
-			echo 'if [ "$?" -ne 0 ] ; then' >> deploy_install.sh ;
-			echo 'echo "could not perform installation"; exit $rc' >> deploy_install.sh ;
-			echo "fi" >> deploy_install.sh ;
-			echo " " >> deploy_install.sh ;
+			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':8081/artifactory/libs-release -Dfile='$file_name' -DgroupId='$groupId' -DartifactId='$artifactId' -Dversion='$currentVersion' -Dpackaging=jar  2> /dev/null	' >> scripts/deploy_install.sh;
+			echo 'if [ "$?" -ne 0 ] ; then' >> scripts/deploy_install.sh ;
+			echo 'echo "could not perform installation"; exit $rc' >> scripts/deploy_install.sh ;
+			echo "fi" >> scripts/deploy_install.sh ;
+			echo " " >> scripts/deploy_install.sh ;
 		fi
 	done
 	
@@ -119,9 +119,9 @@ generate_pom()
 {
 	artifactory_url=$1
 	echo "Started Running generate_pom()"
-	readarray rows < library_metadata.txt
+	readarray rows < data/library_metadata.txt
 
-	cat pom_stub.txt >> pom.xml
+	cat data/pom_stub.txt >> data/pom.xml
 	for rowvalue in "${rows[@]}";
 	do
 		rowarray=(${rowvalue});
@@ -133,24 +133,24 @@ generate_pom()
 		artifactId=${rowarray[7]};
 
 		jar_vendor=$(echo $fname|sed -e 's/\.jar//') ;
-		temp=$( sed -i 's/artifactory_url/'"$artifactory_url"'/' pom.xml)
-		echo -e '\t\t<dependency>' >> pom.xml
+		temp=$( sed -i 's/artifactory_url/'"$artifactory_url"'/' data/pom.xml)
+		echo -e '\t\t<dependency>' >> data/pom.xml
 		if [ $isModified == 0 ];
 		then
-			echo -e '\t\t\t<groupId>'$groupId'</groupId>' >> pom.xml
-			echo -e '\t\t\t<artifactId>'$artifactId'</artifactId>' >> pom.xml
-			echo -e '\t\t\t<version>'$currentVersion'</version>'>> pom.xml
+			echo -e '\t\t\t<groupId>'$groupId'</groupId>' >> data/pom.xml
+			echo -e '\t\t\t<artifactId>'$artifactId'</artifactId>' >> data/pom.xml
+			echo -e '\t\t\t<version>'$currentVersion'</version>'>> data/pom.xml
 		else
-			echo -e '\t\t\t<groupId>'$groupId'</groupId>' >> pom.xml
-			echo -e '\t\t\t<artifactId>'$artifactId'</artifactId>' >> pom.xml
-			echo -e '\t\t\t<version>'$upgradeVersion'</version>'>> pom.xml
+			echo -e '\t\t\t<groupId>'$groupId'</groupId>' >> data/pom.xml
+			echo -e '\t\t\t<artifactId>'$artifactId'</artifactId>' >> data/pom.xml
+			echo -e '\t\t\t<version>'$upgradeVersion'</version>'>> data/pom.xml
 		fi
-		echo -e '\t\t</dependency>' >> pom.xml
+		echo -e '\t\t</dependency>' >> data/pom.xml
 
 	done
 
 	echo -e '</dependencies>
-		</project>' >> pom.xml
+		</project>' >> data/pom.xml
 	echo "Completed generate_pom()"
 }
 
@@ -159,11 +159,11 @@ install_dependencies(){
 	echo "Installing all dependencies"
 	
 	if [ "$isArtifact" -eq 1 ]; then
-		chmod +x deploy_install.sh
-		bash deploy_install.sh
+		chmod +x scripts/deploy_install.sh
+		bash scripts/deploy_install.sh
 	else
-		chmod +x local_install.sh
-		bash local_install.sh
+		chmod +x scripts/local_install.sh
+		bash scripts/local_install.sh
 	fi
 
 	echo "Completed installing dependencies"
@@ -174,31 +174,21 @@ run_gen_pom()
 	echo "Running maven install for the project"
 	
 	if [ "$isTest" -eq 1 ]; then
-		mv temp_pom.xml example/pom.xml
-		cd example
+		mv data/temp_pom.xml example/pom.xml
+		mvn clean install -f example/pom.xml -q 2> /dev/null
+		if [ "$?" -eq 0 ] ; then
+			echo 'Maven project compiled successfully'; exit $rc
+		fi
 	else
-		mv temp_pom.xml pom.xml
-	fi
-	
-	
-	mvn clean install -q 2> /dev/null
-	if [ "$?" -ne 0 ] ; then
-	  echo 'could not perform installation'; exit $rc
-	fi
-	if [ "$?" -eq 0 ] ; then
-	  echo 'Maven project compiled successfully'; exit $rc
-	fi
-
-	if [ "$isTest" -eq 1 ]; then
-		cd ..
+		mv data/temp_pom.xml data/pom.xml
 	fi
 
 }
 
 jar_json_maven_repo()
 {
-		sha1sum $1 > jar-sha1sums.txt
-		shaVal=`cat jar-sha1sums.txt | cut -d " " -f1`
+		sha1sum $1 > data/jar-sha1sums.txt
+		shaVal=`cat data/jar-sha1sums.txt | cut -d " " -f1`
 		value=$(curl -s 'http://search.maven.org/solrsearch/select?q=1:%22'$shaVal'%22&rows=20&wt=json')
 		echo $value | grep -Po '"response":*.*'
 }
@@ -247,9 +237,16 @@ jar_upgradable()
 	#return 0
 }
 
+printParameters()
+{
+	echo -e "\nRunning ant2Maven Script with below parameters \n"
+	echo -e 'CompanyName =' $1' ProjectName = '$2' Artifactory_URL = '$3' IsArtifactoryInstall = '$4' IsTestRun = '$5' \n'
+	
+}
+
 comp_name=$1
 proj_name=$2
-artifactory=$3
+artifactory_url=$3
 arti_install=$4
 isTest=$5
 if [ -z $comp_name ];
@@ -262,9 +259,9 @@ then
 	proj_name='sach'
 fi
 
-if [ -z $artifactory ];
+if [ -z $artifactory_url ];
 then
-	artifactory='localhost'
+	artifactory_url='localhost'
 fi
 
 if [ -z $arti_install ];
@@ -277,11 +274,12 @@ then
 	isTest=1
 fi
 
+printParameters $comp_name $proj_name $artifactory_url $arti_install $isTest
 pre_setup
 populate_metadata
-generate_pom $artifactory
-generate_installer_file $artifactory $arti_install
+generate_pom $artifactory_url
+generate_installer_file $artifactory_url $arti_install
 
-mv pom.xml temp_pom.xml
+mv data/pom.xml data/temp_pom.xml
 install_dependencies $arti_install
 run_gen_pom $isTest
