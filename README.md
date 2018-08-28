@@ -8,8 +8,11 @@
 git clone https://github.com/sachinsshetty/ant2Maven.git
 cd ant2Maven
 # bash scripts/ant2Maven.sh <company_name> <project_name> <artifact_repo_url> <isArtfifactoryUrl> <isTestRun>
-## Example
-bash scripts/ant2Maven.sh efi pace 192.168.220.133 1 0
+## Example - To deploy to artifactory
+bash scripts/ant2Maven.sh com proj 192.168.100.100 1 0
+
+### Example - Test code execution - local installing
+bash scripts/ant2Maven.sh com proj localhost 0 1
 
 ```
 ### Workflow
@@ -61,3 +64,6 @@ https://www.jfrog.com/confluence/display/RTF/Installing+with+Docker
 
 ## Attached settings from maven - maven_generated.txt
 ### find sample settings.xml to be placed in .m2 folder
+
+#### Bash naming convention
+https://google.github.io/styleguide/shell.xml
