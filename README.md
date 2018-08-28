@@ -44,7 +44,7 @@ bash scripts/ant2Maven.sh com proj localhost 0 1
 ### Dependency install
 
 
-### execute scripts/install_artifactory.sh or follow steps given in below steps and then from links for docker
+#### execute scripts/install_artifactory.sh or follow steps given in below steps and then from links for docker
 
 ````
 1. sudo apt update
@@ -62,8 +62,8 @@ https://docs.docker.com/install/linux/docker-ce/ubuntu/#set-up-the-repository
 https://www.jfrog.com/confluence/display/RTF/Installing+with+Docker
 
 
-## Attached settings from maven - maven_generated.txt
-### find sample settings.xml to be placed in .m2 folder
+#### Attached settings from maven - maven_generated.txt
+#### find sample settings.xml to be placed in .m2 folder
 
 #### Bash naming convention
 https://google.github.io/styleguide/shell.xml

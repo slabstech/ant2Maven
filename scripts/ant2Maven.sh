@@ -1,11 +1,19 @@
 #!/bin/bash
 #Script to generate pom dependencies
 
+if [ "$#" -ne 6 ]; then
+    echo -e "Illegal number of parameters\n"
+		echo "Usage :\n"
+		echo -e "bash scripts/ant2Maven.sh <company_name> <project_name> <artifact_repo_url> <artifactory_port> <isArtfifactoryUrl> <isTestRun>\n"
+		echo -e "Ex. bash scripts/ant2Maven.sh com proj localhost 8081 0 0"
+		exit 0
+fi
 comp_name=$1
 proj_name=$2
 artifactory_url=$3
-arti_install=$4
-isTest=$5
+artifactory_port=$4
+arti_install=$5
+isTest=$6
 
 pre_setup()
 {
@@ -47,7 +55,7 @@ populate_metadata()
 
 		if [ $is_modified == 0 ];
 		then
-			artifact_id=$proj_name'-lib-'$jar_vendor
+			artifact_id='lib-'$jar_vendor
 			group_id=$comp_name'.'$proj_name'.'$jar_vendor
 			echo -e $file_name' \t '$fname'\t '$version_id' \t '$latest_version_id' \t '$is_modified' \t '$is_upgradable ' \t '$group_id' \t '$artifact_id >> data/library_metadata.txt
 		else
@@ -64,7 +72,7 @@ populate_metadata()
 				version_id=1.0
 				latest_version_id=1.0
 				is_modified=0
-				artifact_id=$proj_name'-lib-'$jar_vendor
+				artifact_id='lib-'$jar_vendor
 				group_id=$comp_name'.'$proj_name'.'$jar_vendor
 
 				echo -e $file_name' \t '$fname'\t '$version_id' \t '$latest_version_id' \t '$is_modified' \t '$is_upgradable ' \t '$group_id' \t '$artifact_id>> data/library_metadata.txt
@@ -76,21 +84,43 @@ populate_metadata()
 	echo "completed populate_metadata()"
 }
 
+process_ignore_list()
+{
+  readarray rows < data/ignore_jars.txt
+
+  cp data/library_metadata.txt tmp
+	for row_array in "${rows[@]}";
+	do
+    file_type=${row_array[0]};
+    file_info=${row_array[1]};
+    echo $file_info' '$file_type
+    temp=$( sed -i 's/*'"$file_info"'*/\ /' data/library_metadata.txt)
+    #sed -i 's/*'$file_info'*/c /g' data/library_metadata.txt
+	done
+  cat data/library_metadata.txt
+  echo " ss "
+  cat tmp
+  rm tmp
+
+}
+
 generate_installer_file()
 {
 	echo "Started Running generate_installer_file()"
 
 	url=$1
 	arti_install=$2
+  artifactory_port=$3
 	if [ -z $url ]; then
 		url='localhost'
 	fi
 
 	readarray rows < data/library_metadata.txt
 
-	for row_value in "${rows[@]}";
-	do
-		row_array=(${row_value});
+  for row_value in "${rows[@]}";
+  do
+    row_array=(${row_value});
+
 		file_name=${row_array[0]};
 		current_version=${row_array[2]};
 		is_modified=${row_array[4]};
@@ -111,7 +141,7 @@ generate_installer_file()
 		then
 			echo 'echo installing '$file_name' in artifactory repo as '$artifact_id >> scripts/deploy_install.sh
 
-			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':8081/artifactory/libs-release -Dfile='$file_name' -DgroupId='$group_id' -DartifactId='$artifact_id' -Dversion='$current_version' -Dpackaging=jar  2> /dev/null	' >> scripts/deploy_install.sh;
+			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':'$artifactory_port'/artifactory/libs-release -Dfile='$file_name' -DgroupId='$group_id' -DartifactId='$artifact_id' -Dversion='$current_version' -Dpackaging=jar  2> /dev/null	' >> scripts/deploy_install.sh;
 			echo 'if [ "$?" -ne 0 ] ; then' >> scripts/deploy_install.sh ;
 			echo 'echo "could not perform installation"; exit $rc' >> scripts/deploy_install.sh ;
 			echo "fi" >> scripts/deploy_install.sh ;
@@ -125,13 +155,15 @@ generate_installer_file()
 generate_pom()
 {
 	artifactory_url=$1
+  artifactory_port=$2
 	echo "Started Running generate_pom()"
 	readarray rows < data/library_metadata.txt
 
 	cat data/pom_stub.txt >> data/pom.xml
+
 	for row_value in "${rows[@]}";
 	do
-		row_array=(${row_value});
+    row_array=(${row_value});
 		fname=${row_array[1]};
 		current_version=${row_array[2]};
 		upgrade_version=${row_array[3]};
@@ -141,6 +173,7 @@ generate_pom()
 
 		jar_vendor=$(echo $fname|sed -e 's/\.jar//') ;
 		temp=$( sed -i 's/artifactory_url/'"$artifactory_url"'/' data/pom.xml)
+    temp=$( sed -i 's/artifactory_port/'"$artifactory_port"'/' data/pom.xml)
 		echo -e '\t\t<dependency>' >> data/pom.xml
 		if [ $is_modified == 0 ];
 		then
@@ -180,6 +213,7 @@ run_gen_pom()
 {
 	echo "Running maven install for the project"
 
+  cp data/temp_pom.xml data/pom.xml
 	is_test=$1
 	if [ "$is_test" -eq 1 ]; then
 		mv data/temp_pom.xml example/pom.xml
@@ -262,12 +296,17 @@ main()
 
 	if [ -z $proj_name ];
 	then
-		proj_name='sach'
+		proj_name='proj'
 	fi
 
 	if [ -z $artifactory_url ];
 	then
 		artifactory_url='localhost'
+	fi
+
+  if [ -z $artifactory_port ];
+	then
+		artifactory_url='8081'
 	fi
 
 	if [ -z $arti_install ];
@@ -280,16 +319,21 @@ main()
 		is_test=1
 	fi
 
-	printParameters $comp_name $proj_name $artifactory_url $arti_install $isTest
+
+
+	printParameters $comp_name $proj_name $artifactory_url $artifactory_port $arti_install $isTest
 	pre_setup
 	populate_metadata
-	generate_pom $artifactory_url
-	generate_installer_file $artifactory_url $arti_install
+  #process_ignore_list
+	generate_pom $artifactory_url $artifactory_port
+	generate_installer_file $artifactory_url $arti_install $artifactory_port
 
 	mv data/pom.xml data/temp_pom.xml
 	install_dependencies $arti_install
 	run_gen_pom $is_test
 
+  echo -e "Pom file generated at data/pom.xml"
+
 }
 
-main $comp_name $proj_name $artifactory_url $arti_install $isTest
+main $comp_name $proj_name $artifactory_url $artifactory_port $arti_install $isTest

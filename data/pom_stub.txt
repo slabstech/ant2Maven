@@ -14,11 +14,11 @@
 	<repositories>
 		<!--repository>
 			<id>snapshots</id>
-			<url>http://artifactory_url:8081/artifactory/libs-snapshot</url>
+			<url>http://artifactory_url:artifactory_port/artifactory/libs-snapshot</url>
 			</repository-->
 		<repository>
 			<id>releases</id>
-			<url>http://artifactory_url:8081/artifactory/libs-release</url>
+			<url>http://artifactory_url:artifactory_port/artifactory/libs-release</url>
 		</repository>
 	</repositories>
 	<build>
