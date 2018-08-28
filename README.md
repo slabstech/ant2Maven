@@ -67,3 +67,5 @@ https://www.jfrog.com/confluence/display/RTF/Installing+with+Docker
 
 #### Bash naming convention
 https://google.github.io/styleguide/shell.xml
+#### Maven search api help
+https://search.maven.org/classic/#api

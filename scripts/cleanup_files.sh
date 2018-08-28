@@ -55,3 +55,23 @@ if [ -f data/failing_jars.txt ]
 then
 	rm data/failing_jars.txt
 fi
+
+if [ -f data/modified_jars.txt ]
+then
+	rm data/modified_jars.txt
+fi
+
+if [ -f data/central_maven_jars.txt ]
+then
+	rm data/central_maven_jars.txt
+fi
+
+if [ -f data/process_central.txt ]
+then
+	rm data/process_central.txt
+fi
+
+if [ -f data/process_modified.txt ]
+then
+	rm data/process_modified.txt
+fi
