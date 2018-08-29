@@ -21,3 +21,8 @@ https://www.jfrog.com/confluence/display/RTF/Installing+with+Docker
 
 #### Attached settings from maven - maven_generated.txt
 #### find sample settings.xml to be placed in .m2 folder
+
+
+#### test cases using BATS
+https://medium.com/@pimterry/testing-your-shell-scripts-with-bats-abfca9bdc5b9
+https://github.com/sstephenson/bats

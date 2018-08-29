@@ -392,12 +392,12 @@ main()
   process_ignore_list
   remove_duplicates_in_metadata
   generate_lib_removal
-	#generate_pom $artifactory_url $artifactory_port
-	#generate_installer_file $artifactory_url $arti_install $artifactory_port
+	generate_pom $artifactory_url $artifactory_port
+	generate_installer_file $artifactory_url $arti_install $artifactory_port
 
-	#mv data/pom.xml data/temp_pom.xml
-	#install_dependencies $arti_install
-	#run_gen_pom $is_test
+	mv data/pom.xml data/temp_pom.xml
+	install_dependencies $arti_install
+	run_gen_pom $is_test
 
   echo -e "Pom file generated at data/pom.xml"
 
