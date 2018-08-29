@@ -89,8 +89,8 @@
 				</dependencies>
 				<executions>
 					<execution>
-						<id>jar</id>
-						<phase>package</phase>
+						<id>compile</id>
+						<phase>compile</phase>
 						<configuration>
 							<target>
 								<property name="runtime_classpath" refid="maven.runtime.classpath" />

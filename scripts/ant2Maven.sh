@@ -1,21 +1,8 @@
 #!/bin/bash
 #Script to generate pom dependencies
 
-if [ "$#" -ne 6 ]; then
-    echo -e "Illegal number of parameters\n"
-		echo "Usage :\n"
-		echo -e "bash scripts/ant2Maven.sh <company_name> <project_name> <artifact_repo_url> <artifactory_port> <isArtfifactoryUrl> <isTestRun>\n"
-		echo -e "Ex. bash scripts/ant2Maven.sh com proj localhost 8081 0 1"
-		exit 0
-fi
-comp_name=$1
-proj_name=$2
-artifactory_url=$3
-artifactory_port=$4
-arti_install=$5
-isTest=$6
 
-pre_setup()
+function pre_setup()
 {
 	echo "Started Running Presetup"
 	chmod +x scripts/cleanup_files.sh
@@ -24,7 +11,7 @@ pre_setup()
 	echo "Completed Presetup"
 }
 
-populate_metadata()
+function populate_metadata()
 {
 	echo "Started Running populate_metadata()"
 	find . -name '*.jar' > tmpfile
@@ -78,7 +65,7 @@ populate_metadata()
 	echo "completed populate_metadata()"
 }
 
-process_ignore_list()
+function process_ignore_list()
 {
   readarray rows < data/ignore_jars.txt
 
@@ -92,7 +79,7 @@ process_ignore_list()
 
 }
 
-remove_duplicates_in_metadata()
+function remove_duplicates_in_metadata()
 {
   readarray rows < data/library_metadata.txt
 
@@ -137,15 +124,15 @@ remove_duplicates_in_metadata()
     done
   fi
 
-
 }
-generate_installer_file()
+
+function generate_installer_file()
 {
 	echo "Started Running generate_installer_file()"
 
-	url=$1
-	arti_install=$2
-  artifactory_port=$3
+	local url=$1
+	local arti_install=$2
+  local artifactory_port=$3
 	if [ -z $url ]; then
 		url='localhost'
 	fi
@@ -188,18 +175,21 @@ generate_installer_file()
 	echo "Completed generate_installer_file()"
 }
 
-generate_pom()
+function generate_pom()
 {
-	artifactory_url=$1
-  artifactory_port=$2
+	local artifactory_url=$1
+  local artifactory_port=$2
+  local artifact_id_proj=$3
+  local group_id_proj=$4
+
 	echo "Started Running generate_pom()"
 
 	cat data/pom_stub.txt >> data/pom.xml
 
   temp=$( sed -i 's/artifactory_url/'"$artifactory_url"'/' data/pom.xml)
   temp=$( sed -i 's/artifactory_port/'"$artifactory_port"'/' data/pom.xml)
-  temp=$( sed -i 's/artifact_id_proj/'"$artifact_id"'/' data/pom.xml)
-  temp=$( sed -i 's/group_id_proj/'"$group_id"'/' data/pom.xml)
+  temp=$( sed -i 's/artifact_id_proj/'"$artifact_id_proj"'/' data/pom.xml)
+  temp=$( sed -i 's/group_id_proj/'"$group_id_proj"'/' data/pom.xml)
 
   if [ -f data/process_modified.txt ]; then
     readarray rows < data/process_modified.txt
@@ -242,8 +232,8 @@ generate_pom()
 	echo "Completed generate_pom()"
 }
 
-install_dependencies(){
-	is_artifact=$1
+function install_dependencies(){
+	local is_artifact=$1
 	echo "Installing all dependencies"
 
 	if [ "$is_artifact" -eq 1 ]; then
@@ -257,12 +247,12 @@ install_dependencies(){
 	echo "Completed installing dependencies"
 }
 
-run_gen_pom()
+function run_gen_pom()
 {
 	echo "Running maven install for the project"
 
   cp data/temp_pom.xml data/pom.xml
-	is_test=$1
+	local is_test=$1
 	if [ "$is_test" -eq 1 ]; then
 		mv data/temp_pom.xml example/pom.xml
 		mvn clean install -f example/pom.xml -q 2> /dev/null
@@ -275,7 +265,7 @@ run_gen_pom()
 
 }
 
-jar_json_maven_repo()
+function jar_json_maven_repo()
 {
 		sha1sum $1 > data/jar-sha1sums.txt
 		shaVal=$(cat data/jar-sha1sums.txt | cut -d " " -f1)
@@ -283,51 +273,51 @@ jar_json_maven_repo()
 		echo $value | grep -Po '"response":*.*'
 }
 
-jar_modification()
+function jar_modification()
 {
-		is_found=$(echo $1 | grep -Po '"numFound":[0-9]' | cut -d ":" -f2)
+		local is_found=$(echo $1 | grep -Po '"numFound":[0-9]' | cut -d ":" -f2)
 		echo $is_found
 }
 
-get_group_id()
+function get_group_id()
 {
-		group_id=$(echo $1 |   grep -Po '"g":"\K[^"\047]+(?=["\047])' | xargs)
+		local group_id=$(echo $1 |   grep -Po '"g":"\K[^"\047]+(?=["\047])' | xargs)
 		echo $group_id
 }
 
-get_artifact_id()
+function get_artifact_id()
 {
-		artifact_id=$(echo $1 | grep -Po '"a":"\K[^"\047]+(?=["\047])' | xargs)
+		local artifact_id=$(echo $1 | grep -Po '"a":"\K[^"\047]+(?=["\047])' | xargs)
 		echo $artifact_id
 }
 
-get_version_id()
+function get_version_id()
 {
-		version_id=$(echo $1 | grep -Po '"v":"\K[^"\047]+(?=["\047])' | xargs)
+		local version_id=$(echo $1 | grep -Po '"v":"\K[^"\047]+(?=["\047])' | xargs)
 		echo $version_id
 }
 
-get_latest_version_id()
+function get_latest_version_id()
 {
 		## To find latest availabe version
-		group_id=$1
-		artifact_id=$2
-		lat_ver_response=$(curl -s https://search.maven.org/solrsearch/select?q=g:"$group_id"+AND+a:"$artifact_id"&core=gav&rows=20&wt=json)
+		local group_id=$1
+		local artifact_id=$2
+		local lat_ver_response=$(curl -s https://search.maven.org/solrsearch/select?q=g:"$group_id"+AND+a:"$artifact_id"&core=gav&rows=20&wt=json)
 
-		format_lat_ver_response=$(echo $lat_ver_response | grep -Po '"response":*.*')
+		local format_lat_ver_response=$(echo $lat_ver_response | grep -Po '"response":*.*')
 
-		latest_version_id=$(echo $format_lat_ver_response | grep -Po '"latestVersion":"\K[^"\047]+(?=["\047])' | xargs)
+		local latest_version_id=$(echo $format_lat_ver_response | grep -Po '"latestVersion":"\K[^"\047]+(?=["\047])' | xargs)
 		echo $latest_version_id
 }
 
-jar_upgradable()
+function jar_upgradable()
 {
 	#echo 'Checking '$1' for version upgrade'
 	echo "True"
 	#return 0
 }
 
-generate_lib_removal()
+function generate_lib_removal()
 {
   echo -e "Started generate_lib_removal()"
   if [ -f data/library_metadata.txt ]; then
@@ -346,16 +336,36 @@ generate_lib_removal()
   fi
   echo -e "Completed generate_lib_removal()"
 }
-printParameters()
+
+function printParameters()
 {
 	echo -e "\nRunning ant2Maven Script with below parameters \n"
 	echo -e 'CompanyName =' $1', ProjectName = '$2', Artifactory_URL = '$3', Artifactory_Port = '$4', IsArtifactoryInstall = '$5', IsTestRun = '$6' \n'
 
 }
 
-
-main()
+function test_mock()
 {
+  echo "Calling this Function" > tmp
+}
+
+function main()
+{
+
+  local numParams=$#
+  local comp_name=$1
+  local proj_name=$2
+  local artifactory_url=$3
+  local artifactory_port=$4
+  local arti_install=$5
+  local isTest=$6
+  if [ "$numParams" -ne 6 ]; then
+      echo -e "Illegal number of parameters\n"
+  		echo "Usage :\n"
+  		echo -e "bash scripts/ant2Maven.sh <company_name> <project_name> <artifact_repo_url> <artifactory_port> <isArtfifactoryUrl> <isTestRun>\n"
+  		echo -e "Ex. bash scripts/ant2Maven.sh com proj localhost 8081 0 1"
+  		exit 0
+  fi
 	if [ -z $comp_name ];
 	then
 		comp_name='com'
@@ -392,7 +402,7 @@ main()
   process_ignore_list
   remove_duplicates_in_metadata
   generate_lib_removal
-	generate_pom $artifactory_url $artifactory_port
+	generate_pom $artifactory_url $artifactory_port $comp_name $proj_name
 	generate_installer_file $artifactory_url $arti_install $artifactory_port
 
 	mv data/pom.xml data/temp_pom.xml
@@ -403,4 +413,4 @@ main()
 
 }
 
-main $comp_name $proj_name $artifactory_url $artifactory_port $arti_install $isTest
+main "$@"

@@ -1,4 +1,4 @@
-# ant2Maven
+# ant2Maven [![Travis Build Status](https://img.shields.io/travis/pimterry/notes.svg)](https://travis-ci.org/sachinsshetty/ant2Maven)
 
 ## Script to update ant based project to maven project
 
