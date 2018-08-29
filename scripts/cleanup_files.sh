@@ -75,3 +75,8 @@ if [ -f data/process_modified.txt ]
 then
 	rm data/process_modified.txt
 fi
+
+if [ -f scripts/library_removal.sh ]
+then
+	rm scripts/library_removal.sh
+fi

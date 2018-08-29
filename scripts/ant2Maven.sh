@@ -87,9 +87,9 @@ process_ignore_list()
     row_array=(${row_value});
     file_type=${row_array[0]};
     file_info=${row_array[1]};
-
     $(sed -i '/'"$file_info"'/d' data/library_metadata.txt)
 	done
+
 }
 
 remove_duplicates_in_metadata()
@@ -327,6 +327,25 @@ jar_upgradable()
 	#return 0
 }
 
+generate_lib_removal()
+{
+  echo -e "Started generate_lib_removal()"
+  if [ -f data/library_metadata.txt ]; then
+    readarray rows < data/library_metadata.txt
+    echo "is_git=\$1" >> scripts/library_removal.sh
+    for row_value in "${rows[@]}";
+  	do
+      row_array=(${row_value});
+      file_name=${row_array[0]};
+      is_modified=${row_array[4]};
+      if [ "$is_modified" -eq 1 ];
+      then
+        echo 'git rm '$file_name >> scripts/library_removal.sh
+      fi
+    done
+  fi
+  echo -e "Completed generate_lib_removal()"
+}
 printParameters()
 {
 	echo -e "\nRunning ant2Maven Script with below parameters \n"
@@ -372,12 +391,13 @@ main()
   populate_metadata
   process_ignore_list
   remove_duplicates_in_metadata
-	generate_pom $artifactory_url $artifactory_port
-	generate_installer_file $artifactory_url $arti_install $artifactory_port
+  generate_lib_removal
+	#generate_pom $artifactory_url $artifactory_port
+	#generate_installer_file $artifactory_url $arti_install $artifactory_port
 
-	mv data/pom.xml data/temp_pom.xml
-	install_dependencies $arti_install
-	run_gen_pom $is_test
+	#mv data/pom.xml data/temp_pom.xml
+	#install_dependencies $arti_install
+	#run_gen_pom $is_test
 
   echo -e "Pom file generated at data/pom.xml"
 
