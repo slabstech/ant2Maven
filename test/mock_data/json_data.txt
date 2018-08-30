@@ -1,0 +1,1 @@
+"response":{"numFound":1,"start":0,"docs":[{"id":"junit:junit:4.12","g":"junit","a":"junit","v":"4.12","p":"jar","timestamp":1417709863000,"ec":["-sources.jar","-javadoc.jar",".jar",".pom"],"tags":["unit","gamma","created","kent","testing","java","beck","junit","framework","erich"]}]}}

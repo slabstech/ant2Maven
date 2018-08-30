@@ -18,6 +18,8 @@ function populate_metadata()
 	cat tmpfile | sed -e 's/\.\///' > data/filelist.txt
 	rm tmpfile
 
+	local comp_name=$1
+	local proj_name=$2
 	temp=$(sort -u data/filelist.txt)
 	#metadata_file_name=$1
 	#metadata_file_name=library_metadata.txt
@@ -26,6 +28,7 @@ function populate_metadata()
 	do
 		json_data=$(jar_json_maven_repo $file_name)
 
+		#echo $json_data
 		is_modified=$(jar_modification $json_data)
 
 		is_upgradable=0
@@ -130,9 +133,10 @@ function generate_installer_file()
 {
 	echo "Started Running generate_installer_file()"
 
-	local url=$1
-	local arti_install=$2
-  local artifactory_port=$3
+	local url=$3
+	local artifactory_port=$4
+	local arti_install=$5
+
 	if [ -z $url ]; then
 		url='localhost'
 	fi
@@ -177,10 +181,11 @@ function generate_installer_file()
 
 function generate_pom()
 {
-	local artifactory_url=$1
-  local artifactory_port=$2
-  local artifact_id_proj=$3
-  local group_id_proj=$4
+
+	local group_id_proj=$1
+	local artifact_id_proj=$2
+	local artifactory_url=$3
+  local artifactory_port=$4
 
 	echo "Started Running generate_pom()"
 
@@ -207,13 +212,13 @@ function generate_pom()
   		echo -e '\t\t</dependency>' >> data/pom.xml
 
   	done
-
   fi
 
   if [ -f data/process_central.txt ]; then
     readarray rows < data/process_central.txt
     for row_value in "${rows[@]}";
   	do
+
       row_array=(${row_value});
   		upgrade_version=${row_array[3]};
   		group_id=${row_array[6]};
@@ -224,7 +229,8 @@ function generate_pom()
       echo -e '\t\t\t<artifactId>'$artifact_id'</artifactId>' >> data/pom.xml
       echo -e '\t\t\t<version>'$upgrade_version'</version>'>> data/pom.xml
       echo -e '\t\t</dependency>' >> data/pom.xml
-  	done
+
+		done
   fi
 
 	echo -e '\t</dependencies>' >> data/pom.xml
@@ -346,26 +352,33 @@ function printParameters()
 
 function test_mock()
 {
-  echo "Calling this Function" > tmp
+  echo "Calling this Function"
+	#return 1
 }
 
-function main()
+function usage()
 {
+	local numParams=$1
+	if [ "$numParams" -ne 6 ]; then
+      echo -e "Illegal number of parameters\n"
+  		echo "Usage :\n"
+  		echo -e "bash scripts/ant2Maven.sh <function_name> <company_name> <project_name> <artifact_repo_url> <artifactory_port> <isArtfifactoryUrl> <isTestRun>\n"
+  		echo -e "Ex. bash scripts/ant2Maven.sh exec com proj localhost 8081 0 1"
+  		exit 1
+  fi
+}
 
-  local numParams=$#
+function run_conversion()
+{
+	usage $#
+
   local comp_name=$1
   local proj_name=$2
   local artifactory_url=$3
   local artifactory_port=$4
   local arti_install=$5
   local isTest=$6
-  if [ "$numParams" -ne 6 ]; then
-      echo -e "Illegal number of parameters\n"
-  		echo "Usage :\n"
-  		echo -e "bash scripts/ant2Maven.sh <company_name> <project_name> <artifact_repo_url> <artifactory_port> <isArtfifactoryUrl> <isTestRun>\n"
-  		echo -e "Ex. bash scripts/ant2Maven.sh com proj localhost 8081 0 1"
-  		exit 0
-  fi
+
 	if [ -z $comp_name ];
 	then
 		comp_name='com'
@@ -396,20 +409,80 @@ function main()
 		is_test=1
 	fi
 
-	printParameters $comp_name $proj_name $artifactory_url $artifactory_port $arti_install $isTest
+	printParameters $@
 	pre_setup
-  populate_metadata
+  populate_metadata $@
   process_ignore_list
   remove_duplicates_in_metadata
   generate_lib_removal
-	generate_pom $artifactory_url $artifactory_port $comp_name $proj_name
-	generate_installer_file $artifactory_url $arti_install $artifactory_port
+	generate_pom $@
+	generate_installer_file $@
 
 	mv data/pom.xml data/temp_pom.xml
+
 	install_dependencies $arti_install
 	run_gen_pom $is_test
 
   echo -e "Pom file generated at data/pom.xml"
+
+}
+
+function main()
+{
+	local ret=0
+  local cmd=""
+
+#	usage $#
+  if [ -z "$1" ]; then
+  	printf "No command specified\n\n"
+    usage 1
+    exit 1
+  fi
+
+  case "$1" in
+  	"exec" )
+    	cmd="run_conversion"
+    	;;
+    "populate_metadata" )
+    	cmd="populate_metadata"
+    	;;
+    "process_ignore_list" )
+    	cmd="process_ignore_list"
+      ;;
+    "remove_duplicates_in_metadata" )
+    	cmd="remove_duplicates_in_metadata"
+      ;;
+    "generate_pom" )
+    	cmd="generate_pom"
+    	;;
+    "generate_installer_file" )
+    	cmd="generate_installer_file"
+      ;;
+    "install_dependencies" )
+    	cmd="install_dependencies"
+    	;;
+    "generate_lib_removal" )
+    	cmd="generate_lib_removal"
+      ;;
+		"test_mock" )
+			cmd="test_mock"
+			;;
+
+    --help | -help | -h )
+    	cmd="usage"
+      ;;
+    * )
+       printf "$1 is not a recognized function name.\n\n"
+       cmd="usage"
+       ret=1
+       ;;
+    esac
+
+		shift
+
+    $cmd "$@"
+    ret=$[$ret+$?]
+ 	 	exit $ret
 
 }
 
