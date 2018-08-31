@@ -1,5 +1,10 @@
 # ant2Maven [![Travis Build Status](https://img.shields.io/travis/pimterry/notes.svg)](https://travis-ci.org/sachinsshetty/ant2Maven)
 
+
+##### Project now moved to bitbucket for advanced features.
+
+#### Contact websachinshetty(at)gmail(dot)com for additional info
+
 ## Script to update ant based project to maven project
 
 
@@ -42,7 +47,7 @@ bash scripts/ant2Maven test get_version_id
 |-------|-------------|-------|
 |1 | Find corresponding jar from maven repository and replace in pom file. |Done |
 |1| Ignore Target Jar- ReRun Scenario | |
-|1| Bash test case |30%|
+|1| Bash test case |5%|
 |2 | Handle multiple jars found from sha1sum. numFound>1| |
 |2 | Remove duplicates jar | Done |
 |2 | Remove low level/ transitive jars||
@@ -61,3 +66,7 @@ documented in repository_README.md
 https://google.github.io/styleguide/shell.xml
 #### Maven search api help
 https://search.maven.org/classic/#api
+
+
+## Disclaimer
+#### This is an open source project. The code is provided as-is, without warranty, and disclaiming liability for damages resulting from using the project.
