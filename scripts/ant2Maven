@@ -5,8 +5,8 @@
 function pre_setup()
 {
 	echo "Started Running Presetup"
-	chmod +x scripts/cleanup_files.sh
-	bash scripts/cleanup_files.sh
+	chmod +x scripts/cleanup_files
+	bash scripts/cleanup_files
 
 	echo "Completed Presetup"
 }
@@ -66,6 +66,7 @@ function populate_metadata()
 		fi
 	done;
 	echo "completed populate_metadata()"
+	return 1
 }
 
 function process_ignore_list()
@@ -156,21 +157,21 @@ function generate_installer_file()
   		if [ "$arti_install" -eq 0 ] ;
   		then
 
-  			echo 'echo installing '$file_name' in local maven repo as '$artifact_id >> scripts/local_install.sh
-  			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$group_id' -DartifactId='$artifact_id' -Dversion='$current_version' -Dpackaging=jar  2> /dev/null	' >> scripts/local_install.sh;
-  			echo 'if [ "$?" -ne 0 ] ; then' >> scripts/local_install.sh ;
-  			echo 'echo "could not perform installation"; exit $rc' >> scripts/local_install.sh ;
-  			echo "fi" >> scripts/local_install.sh ;
-  			echo " " >> scripts/local_install.sh ;
+  			echo 'echo installing '$file_name' in local maven repo as '$artifact_id >> scripts/local_install
+  			echo 'mvn -q install:install-file -Dfile='$file_name' -DgroupId='$group_id' -DartifactId='$artifact_id' -Dversion='$current_version' -Dpackaging=jar  2> /dev/null	' >> scripts/local_install;
+  			echo 'if [ "$?" -ne 0 ] ; then' >> scripts/local_install ;
+  			echo 'echo "could not perform installation"; exit $rc' >> scripts/local_install ;
+  			echo "fi" >> scripts/local_install ;
+  			echo " " >> scripts/local_install ;
   		fi
   		if [ "$arti_install" -eq 1 ];
   		then
-  			echo 'echo installing '$file_name' in artifactory repo as '$artifact_id >> scripts/deploy_install.sh
-  			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':'$artifactory_port'/artifactory/libs-release -Dfile='$file_name' -DgroupId='$group_id' -DartifactId='$artifact_id' -Dversion='$current_version' -Dpackaging=jar  2> /dev/null	' >> scripts/deploy_install.sh;
-  			echo 'if [ "$?" -ne 0 ] ; then' >> scripts/deploy_install.sh ;
-  			echo 'echo "could not perform installation"; exit $rc' >> scripts/deploy_install.sh ;
-  			echo "fi" >> scripts/deploy_install.sh ;
-  			echo " " >> scripts/deploy_install.sh ;
+  			echo 'echo installing '$file_name' in artifactory repo as '$artifact_id >> scripts/deploy_install ;
+  			echo 'mvn deploy:deploy-file -DrepositoryId=releases -Durl=http://'$url':'$artifactory_port'/artifactory/libs-release -Dfile='$file_name' -DgroupId='$group_id' -DartifactId='$artifact_id' -Dversion='$current_version' -Dpackaging=jar  2> /dev/null	' >> scripts/deploy_install;
+  			echo 'if [ "$?" -ne 0 ] ; then' >> scripts/deploy_install ;
+  			echo 'echo "could not perform installation"; exit $rc' >> scripts/deploy_install ;
+  			echo "fi" >> scripts/deploy_install ;
+  			echo " " >> scripts/deploy_install ;
   		fi
   	done
 
@@ -239,15 +240,15 @@ function generate_pom()
 }
 
 function install_dependencies(){
-	local is_artifact=$1
+	local is_artifact=$5
 	echo "Installing all dependencies"
 
 	if [ "$is_artifact" -eq 1 ]; then
-		chmod +x scripts/deploy_install.sh
-		bash scripts/deploy_install.sh
+		chmod +x scripts/deploy_install
+		bash scripts/deploy_install
 	else
-		chmod +x scripts/local_install.sh
-		bash scripts/local_install.sh
+		chmod +x scripts/local_install
+		bash scripts/local_install
 	fi
 
 	echo "Completed installing dependencies"
@@ -258,7 +259,7 @@ function run_gen_pom()
 	echo "Running maven install for the project"
 
   cp data/temp_pom.xml data/pom.xml
-	local is_test=$1
+	local is_test=$6
 	if [ "$is_test" -eq 1 ]; then
 		mv data/temp_pom.xml example/pom.xml
 		mvn clean install -f example/pom.xml -q 2> /dev/null
@@ -328,7 +329,7 @@ function generate_lib_removal()
   echo -e "Started generate_lib_removal()"
   if [ -f data/library_metadata.txt ]; then
     readarray rows < data/library_metadata.txt
-    echo "is_git=\$1" >> scripts/library_removal.sh
+    echo "is_git=\$1" >> scripts/library_removal
     for row_value in "${rows[@]}";
   	do
       row_array=(${row_value});
@@ -336,7 +337,7 @@ function generate_lib_removal()
       is_modified=${row_array[4]};
       if [ "$is_modified" -eq 1 ];
       then
-        echo 'git rm '$file_name >> scripts/library_removal.sh
+        echo 'git rm '$file_name >> scripts/library_removal
       fi
     done
   fi
@@ -358,19 +359,25 @@ function test_mock()
 
 function usage()
 {
-	local numParams=$1
-	if [ "$numParams" -ne 6 ]; then
+	local numParams=$#
+	local func_type=$1
+	if [ "$func_type" == "exec" ] && [ "$numParams" -ne 6 ]; then
       echo -e "Illegal number of parameters\n"
   		echo "Usage :\n"
-  		echo -e "bash scripts/ant2Maven.sh <function_name> <company_name> <project_name> <artifact_repo_url> <artifactory_port> <isArtfifactoryUrl> <isTestRun>\n"
-  		echo -e "Ex. bash scripts/ant2Maven.sh exec com proj localhost 8081 0 1"
+  		echo -e "bash scripts/ant2Maven <function_name> <company_name> <project_name> <artifact_repo_url> <artifactory_port> <isArtfifactoryUrl> <isTestRun>\n"
+  		echo -e "Ex. bash scripts/ant2Maven exec com proj localhost 8081 0 1"
   		exit 1
   fi
+
+	if [ "$func_type" == "test" ] ; then
+			echo "Test function name not passed"
+  fi
+
 }
 
 function run_conversion()
 {
-	usage $#
+	usage $@
 
   local comp_name=$1
   local proj_name=$2
@@ -420,33 +427,26 @@ function run_conversion()
 
 	mv data/pom.xml data/temp_pom.xml
 
-	install_dependencies $arti_install
-	run_gen_pom $is_test
+	install_dependencies $@
+	run_gen_pom $@
 
   echo -e "Pom file generated at data/pom.xml"
 
 }
 
-function main()
+function test_all {
+	echo "Dummy function"
+	return 1
+}
+
+function run_test()
 {
-	local ret=0
-  local cmd=""
-
-#	usage $#
-  if [ -z "$1" ]; then
-  	printf "No command specified\n\n"
-    usage 1
-    exit 1
-  fi
-
-  case "$1" in
-  	"exec" )
-    	cmd="run_conversion"
-    	;;
-    "populate_metadata" )
-    	cmd="populate_metadata"
-    	;;
-    "process_ignore_list" )
+	function_name=$1
+	case "$function_name" in
+		"all" )
+    	cmd="test_all"
+      ;;
+  	"process_ignore_list" )
     	cmd="process_ignore_list"
       ;;
     "remove_duplicates_in_metadata" )
@@ -467,7 +467,42 @@ function main()
 		"test_mock" )
 			cmd="test_mock"
 			;;
+    --help | -help | -h )
+    	cmd="usage"
+      ;;
+    * )
+       #printf "$1 is not a recognized function name.\n\n"
+       cmd="usage"
+       ret=1
+       ;;
+    esac
 
+		shift
+
+    $cmd "$@"
+    ret=$[$ret+$?]
+		exit $ret
+}
+
+function main()
+{
+	local ret=0
+  local cmd=""
+
+#	usage $#
+  if [ -z "$1" ]; then
+  	printf "No command specified\n\n"
+    usage $@
+    exit 1
+  fi
+
+  case "$1" in
+  	"exec" )
+    	cmd="run_conversion"
+    	;;
+    "test" )
+    	cmd="run_test"
+    	;;
     --help | -help | -h )
     	cmd="usage"
       ;;
