@@ -1,4 +1,4 @@
-# ant2Maven [![Travis Build Status](https://img.shields.io/travis/pimterry/notes.svg)](https://travis-ci.org/sachinsshetty/ant2Maven)
+# ant2Maven [![Travis Build Status](https://img.shields.io/badge/travis-sachinsshetty-ant2Maven.svg)](https://travis-ci.org/sachinsshetty/ant2Maven)
 
 
 ##### Project now moved to bitbucket for advanced features.
