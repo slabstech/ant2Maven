@@ -1,30 +1,25 @@
-# ant2Maven [![Travis Build Status](https://img.shields.io/badge/travis-sachinsshetty-ant2Maven.svg)](https://travis-ci.org/sachinsshetty/ant2Maven)
+# buildabot 
 
-
-##### Project now moved to bitbucket for advanced features.
-
-#### Contact websachinshetty(at)gmail(dot)com for additional info
-
-## Script to update ant based project to maven project
+## Webservice for Automatic updates via PR
 
 
 ### To execute
 ```
-git clone https://github.com/sachinsshetty/ant2Maven.git
-cd ant2Maven
-# bash scripts/ant2Maven <Function type> <company_name> <project_name> <artifact_repo_url> <isArtfifactoryUrl> <isTestRun>
+git clone https://github.com/slabstech/buildabot.git
+cd buildabolt
+# bash scripts/buildabot <Function type> <company_name> <project_name> <artifact_repo_url> <isArtfifactoryUrl> <isTestRun>
 ## Example - To deploy to artifactory
-bash scripts/ant2Maven exec com proj 192.168.100.100 1 0
+bash scripts/buildabot exec com proj 192.168.100.100 1 0
 
 ### Example - To run with sample project- local install
-bash scripts/ant2Maven exec com proj localhost 0 1
+bash scripts/buildabot exec com proj localhost 0 1
 
 ```
 
 ### To use in your project
 1. Copy data and scripts folder to project directory
-2. Execute ant2Maven
-3. Find the generated pom.xml, installation files in data directory .
+2. Execute buildabot
+3. Find the generated build.xml/package.json/requirements.txt/pom.xml, installation files in data directory .
 
 
 ### Test Case Execution : Using BATS
