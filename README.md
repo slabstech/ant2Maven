@@ -62,6 +62,8 @@ https://google.github.io/styleguide/shell.xml
 #### Maven search api help
 https://search.maven.org/classic/#api
 
+### References
+* Manage Java dependencies - https://snyk.io/blog/best-practices-for-managing-java-dependencies/
 
 ## Disclaimer
 #### This is an open source project. The code is provided as-is, without warranty, and disclaiming liability for damages resulting from using the project.
