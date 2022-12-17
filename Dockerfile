@@ -4,7 +4,7 @@ WORKDIR /app
 COPY . .
 RUN gradle -p /app/ build -x test
 
-RUN cp /app/build/libs/app-0.0.1.jar /app/app.jar
+RUN cp /app/build/libs/*0.0.1-SNAPSHOT.jar /app/app.jar
 
 RUN jdeps --ignore-missing-deps --module-path modules --add-modules=ALL-MODULE-PATH --generate-module-info out /app/app.jar
 RUN jlink --add-modules ALL-MODULE-PATH --no-man-pages --no-header-files --compress=2 --output jre
@@ -20,8 +20,8 @@ COPY --from=jre-build /app/jre jre
 # copy the app
 COPY --from=jre-build /app/app.jar app.jar
 
-RUN chown -R javauser:javauser /app
-USER javauser
+RUN chown -R appuser:appuser /app
+USER appauser
 
 # run the app on startup
 

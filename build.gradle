@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.0.0'
 	id 'io.spring.dependency-management' version '1.1.0'
+	id "com.github.ben-manes.versions" version "0.42.0"
 }
 
 group = 'com.slabstech'
@@ -45,4 +46,19 @@ dependencyManagement {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+
+task cloneRepo(type: Exec) {
+	commandLine 'sh', 'scripts/cloneRepo.sh' , 'data/projects.json'
+}
+
+task checkDependencyUpdate(type: Exec){
+	commandLine 'gradlew.bat', 'dependencyUpdates', '-Drevision=release'
+}
+
+task buildAll(type: Exec){
+
+	dependsOn "checkDependencyUpdate", "build"
+	commandLine 'docker', 'build', '--rm', '.', '-t', 'slabstech/buildabot', '--file',  'Dockerfile'
 }
