@@ -1,12 +1,4 @@
-*.i
-*.ii
-*.gpu
-*.ptx
-*.cubin
-*.fatbin
-.idea/
-*.iml
-
+HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar

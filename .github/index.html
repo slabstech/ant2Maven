@@ -1,0 +1,107 @@
+<h1 id="buildabot">buildabot</h1>
+<h2 id="webservice-for-automatic-updates-via-pr">Webservice for Automatic updates via PR</h2>
+<h3 id="to-execute">To execute</h3>
+<pre><code>git clone http<span class="hljs-variable">s:</span>//github.<span class="hljs-keyword">com</span>/slabstech/buildabot.git
+<span class="hljs-keyword">cd</span> buildabolt
+# bash scripts/buildabot &lt;Function <span class="hljs-built_in">type</span>&gt; <span class="hljs-symbol">&lt;company_name&gt;</span> <span class="hljs-symbol">&lt;project_name&gt;</span> <span class="hljs-symbol">&lt;artifact_repo_url&gt;</span> <span class="hljs-symbol">&lt;isArtfifactoryUrl&gt;</span> <span class="hljs-symbol">&lt;isTestRun&gt;</span>
+## Example - To deploy <span class="hljs-keyword">to</span> artifactory
+bash scripts/buildabot exec <span class="hljs-keyword">com</span> proj <span class="hljs-number">192.168</span>.<span class="hljs-number">100.100</span> <span class="hljs-number">1</span> <span class="hljs-number">0</span>
+
+### Example - To run with sample project- local install
+bash scripts/buildabot exec <span class="hljs-keyword">com</span> proj localhost <span class="hljs-number">0</span> <span class="hljs-number">1</span>
+</code></pre><h3 id="to-use-in-your-project">To use in your project</h3>
+<ol>
+    <li>Copy data and scripts folder to project directory</li>
+    <li>Execute buildabot</li>
+    <li>Find the generated build.xml/package.json/requirements.txt/pom.xml, installation files in data directory .</li>
+</ol>
+<h3 id="test-case-execution-using-bats">Test Case Execution : Using BATS</h3>
+<pre><code>### Full Suite Run
+
+bash scripts/test_suite
+
+
+### Specific function test
+
+bash scripts/ant2Maven test &lt;function_name&gt; &lt;...Params ..&gt;
+##### Example :
+bash scripts/ant2Maven test get_version_id
+</code></pre><h3 id="todo">TODO</h3>
+<table>
+    <thead>
+    <tr>
+        <th>Version</th>
+        <th>Description</th>
+        <th>Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>1</td>
+        <td>Find corresponding jar from maven repository and replace in pom file.</td>
+        <td>Done</td>
+    </tr>
+    <tr>
+        <td>1</td>
+        <td>Ignore Target Jar- ReRun Scenario</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>1</td>
+        <td>Bash test case</td>
+        <td>5%</td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>Handle multiple jars found from sha1sum. numFound&gt;1</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>Remove duplicates jar</td>
+        <td>Done</td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>Remove low level/ transitive jars</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>Add ignore jar list</td>
+        <td>Done</td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>Use Maven dependency tree</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>Jar file analysis</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>Generate library removal script</td>
+        <td>Done</td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>Add ant clean execution phase</td>
+        <td>Done</td>
+    </tr>
+    <tr>
+        <td>5</td>
+        <td>Individual/Suite Test Cases Run</td>
+    </tr>
+    </tbody>
+</table>
+<h5 id="steps-to-create-a-docker-jfrog-artifactory-in-ubuntu-vm">Steps to Create a docker jfrog artifactory in Ubuntu-VM</h5>
+<p>documented in repository_README.md</p>
+<h4 id="bash-naming-convention">Bash naming convention</h4>
+<p><a href="https://google.github.io/styleguide/shell.xml">https://google.github.io/styleguide/shell.xml</a></p>
+<h4 id="maven-search-api-help">Maven search api help</h4>
+<p><a href="https://search.maven.org/classic/#api">https://search.maven.org/classic/#api</a></p>
+<h2 id="disclaimer">Disclaimer</h2>
+<h4 id="this-is-an-open-source-project-the-code-is-provided-as-is-without-warranty-and-disclaiming-liability-for-damages-resulting-from-using-the-project-">This is an open source project. The code is provided as-is, without warranty, and disclaiming liability for damages resulting from using the project.</h4>
